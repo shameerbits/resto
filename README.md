@@ -138,3 +138,42 @@ curl http://localhost:4000/api/orders/1
 curl http://localhost:4000/api/orders/1/bill
 curl "http://localhost:4000/api/orders/1/bill?taxPercent=5"
 ```
+
+## Inventory Deduction (Recipe Based)
+
+When `POST /api/orders` is called, inventory is deducted automatically based on recipe rows:
+
+- `menu_item_recipes.quantity_required` defines ingredient usage for one menu item unit.
+- Required stock is multiplied by ordered quantity.
+- Order save + order_items save + inventory deduction run in one transaction.
+- If stock is insufficient, order creation fails and nothing is saved.
+
+### Seed ingredients and recipe example
+
+```sql
+INSERT INTO ingredients (name, unit, stock_quantity)
+VALUES
+	('Rice', 'kg', 20.000),
+	('Chicken', 'kg', 10.000)
+ON DUPLICATE KEY UPDATE
+	unit = VALUES(unit),
+	stock_quantity = VALUES(stock_quantity);
+
+INSERT INTO menu_item_recipes (menu_item_id, ingredient_id, quantity_required)
+VALUES
+	(1, 1, 0.250),
+	(1, 2, 0.200)
+ON DUPLICATE KEY UPDATE
+	quantity_required = VALUES(quantity_required);
+```
+
+### Verify deduction
+
+1. Check stock before order:
+```sql
+SELECT id, name, stock_quantity FROM ingredients ORDER BY id;
+```
+2. Create order with `menuItemId: 1`.
+3. Check stock again using the same select query.
+
+Expected: stock decreases by recipe quantity multiplied by ordered quantity.

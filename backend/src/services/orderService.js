@@ -1,5 +1,6 @@
 const menuModel = require('../models/menuModel');
 const orderModel = require('../models/orderModel');
+const inventoryModel = require('../models/inventoryModel');
 
 function normalizeOrderItems(items) {
   const merged = new Map();
@@ -90,6 +91,48 @@ function calculateTotalAmount(pricedItems) {
   return Number(total.toFixed(2));
 }
 
+function buildIngredientRequirements(orderItems, recipeRows) {
+  const recipeMapByMenuItem = new Map();
+
+  for (const row of recipeRows) {
+    const rowsForMenuItem = recipeMapByMenuItem.get(row.menuItemId) || [];
+    rowsForMenuItem.push(row);
+    recipeMapByMenuItem.set(row.menuItemId, rowsForMenuItem);
+  }
+
+  for (const item of orderItems) {
+    if (!recipeMapByMenuItem.has(item.menuItemId)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        message: `recipe not configured for menu item ${item.menuItemId}`,
+      };
+    }
+  }
+
+  const requirementMap = new Map();
+
+  for (const item of orderItems) {
+    const recipeIngredients = recipeMapByMenuItem.get(item.menuItemId);
+
+    for (const recipe of recipeIngredients) {
+      const perItemQty = Number(recipe.quantityRequired);
+      const requiredQty = Number((perItemQty * item.quantity).toFixed(3));
+      const currentQty = requirementMap.get(recipe.ingredientId) || 0;
+      requirementMap.set(recipe.ingredientId, Number((currentQty + requiredQty).toFixed(3)));
+    }
+  }
+
+  const requiredIngredients = Array.from(requirementMap.entries()).map(
+    ([ingredientId, quantityToDeduct]) => ({ ingredientId, quantityToDeduct })
+  );
+
+  return {
+    ok: true,
+    data: requiredIngredients,
+  };
+}
+
 async function getOrderById(id) {
   const order = await orderModel.findOrderById(id);
   if (!order) {
@@ -121,11 +164,40 @@ async function createOrder(payload) {
 
   const totalAmount = calculateTotalAmount(pricedItemsResult.data);
 
-  const orderId = await orderModel.createOrderWithItems({
-    items: pricedItemsResult.data,
-    totalAmount,
-    notes: validated.data.notes,
-  });
+  const menuItemIds = validated.data.items.map((item) => item.menuItemId);
+  const recipeRows = await inventoryModel.findRecipeIngredientsByMenuItemIds(menuItemIds);
+  const inventoryRequirements = buildIngredientRequirements(validated.data.items, recipeRows);
+  if (!inventoryRequirements.ok) {
+    return inventoryRequirements;
+  }
+
+  let orderId;
+  try {
+    orderId = await orderModel.createOrderWithItems({
+      items: pricedItemsResult.data,
+      totalAmount,
+      notes: validated.data.notes,
+      requiredIngredients: inventoryRequirements.data,
+    });
+  } catch (error) {
+    if (error.code === 'INSUFFICIENT_INVENTORY') {
+      return {
+        ok: false,
+        statusCode: 400,
+        message: `insufficient inventory for ingredient ${error.ingredientId}`,
+      };
+    }
+
+    if (error.code === 'INVENTORY_INGREDIENT_NOT_FOUND') {
+      return {
+        ok: false,
+        statusCode: 400,
+        message: `ingredient ${error.ingredientId} not found`,
+      };
+    }
+
+    throw error;
+  }
 
   const orderResult = await getOrderById(orderId);
   return {

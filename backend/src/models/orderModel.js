@@ -1,10 +1,83 @@
 const { pool } = require('../config/db');
 
-async function createOrderWithItems({ items, totalAmount, notes }) {
+function createModelError(code, message, extra = {}) {
+  const error = new Error(message);
+  error.code = code;
+  Object.assign(error, extra);
+  return error;
+}
+
+async function lockIngredientsByIds(connection, ingredientIds) {
+  if (!ingredientIds.length) {
+    return [];
+  }
+
+  const placeholders = ingredientIds.map(() => '?').join(', ');
+  const [rows] = await connection.query(
+    `
+      SELECT id, stock_quantity AS stockQuantity
+      FROM ingredients
+      WHERE id IN (${placeholders})
+      FOR UPDATE
+    `,
+    ingredientIds
+  );
+
+  return rows;
+}
+
+async function applyInventoryDeduction(connection, requiredIngredients) {
+  if (!requiredIngredients.length) {
+    return;
+  }
+
+  const ingredientIds = requiredIngredients.map((item) => item.ingredientId);
+  const inventoryRows = await lockIngredientsByIds(connection, ingredientIds);
+  const inventoryMap = new Map(inventoryRows.map((row) => [row.id, Number(row.stockQuantity)]));
+
+  for (const requirement of requiredIngredients) {
+    if (!inventoryMap.has(requirement.ingredientId)) {
+      throw createModelError(
+        'INVENTORY_INGREDIENT_NOT_FOUND',
+        `ingredient ${requirement.ingredientId} not found`,
+        { ingredientId: requirement.ingredientId }
+      );
+    }
+
+    const currentStock = inventoryMap.get(requirement.ingredientId);
+    if (currentStock < requirement.quantityToDeduct) {
+      throw createModelError(
+        'INSUFFICIENT_INVENTORY',
+        `insufficient inventory for ingredient ${requirement.ingredientId}`,
+        {
+          ingredientId: requirement.ingredientId,
+          available: currentStock,
+          required: requirement.quantityToDeduct,
+        }
+      );
+    }
+  }
+
+  for (const requirement of requiredIngredients) {
+    await connection.query(
+      `
+        UPDATE ingredients
+        SET stock_quantity = stock_quantity - ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `,
+      [requirement.quantityToDeduct, requirement.ingredientId]
+    );
+  }
+}
+
+async function createOrderWithItems({ items, totalAmount, notes, requiredIngredients = [] }) {
   const connection = await pool.getConnection();
 
   try {
     await connection.beginTransaction();
+
+    await applyInventoryDeduction(connection, requiredIngredients);
 
     const [orderResult] = await connection.query(
       `
