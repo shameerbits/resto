@@ -8,4 +8,3 @@ export declare class HealthController {
         timestamp: string;
     }>;
 }
-//# sourceMappingURL=health.controller.d.ts.map

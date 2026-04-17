@@ -10,4 +10,3 @@ export declare class PaymentFailedException extends Error {
 export declare class RecipeNotCompleteException extends Error {
     constructor(menuItemId: number);
 }
-//# sourceMappingURL=custom.exceptions.d.ts.map

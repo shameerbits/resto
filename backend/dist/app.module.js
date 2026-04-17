@@ -25,6 +25,7 @@ const recipe_module_1 = require("./modules/recipe/recipe.module");
 const health_module_1 = require("./modules/health/health.module");
 const table_module_1 = require("./modules/table/table.module");
 const configuration_1 = __importDefault(require("./config/configuration"));
+const logger_service_1 = require("./common/logger/logger.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -52,6 +53,7 @@ exports.AppModule = AppModule = __decorate([
             health_module_1.HealthModule,
             table_module_1.TableModule,
         ],
+        providers: [logger_service_1.LoggerService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

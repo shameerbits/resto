@@ -7,4 +7,3 @@ export declare class LoggerService implements NestLoggerService {
     debug(message: string, context?: string): void;
     verbose(message: string, context?: string): void;
 }
-//# sourceMappingURL=logger.service.d.ts.map

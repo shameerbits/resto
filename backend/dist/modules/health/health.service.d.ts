@@ -4,4 +4,3 @@ export declare class HealthService {
         timestamp: string;
     };
 }
-//# sourceMappingURL=health.service.d.ts.map

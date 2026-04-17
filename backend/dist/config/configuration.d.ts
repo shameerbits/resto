@@ -27,7 +27,7 @@ declare const _default: () => {
         host: string;
         port: number;
         db: number;
-        password: string | undefined;
+        password: string;
     };
     logging: {
         level: string;
@@ -40,4 +40,3 @@ declare const _default: () => {
     };
 };
 export default _default;
-//# sourceMappingURL=configuration.d.ts.map
