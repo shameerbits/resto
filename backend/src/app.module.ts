@@ -14,6 +14,7 @@ import { RecipeModule } from '@modules/recipe/recipe.module';
 import { HealthModule } from '@modules/health/health.module';
 import { TableModule } from '@modules/table/table.module';
 import config from '@config/configuration';
+import { LoggerService } from '@common/logger/logger.service';
 
 @Module({
   imports: [
@@ -47,5 +48,6 @@ import config from '@config/configuration';
     HealthModule,
     TableModule,
   ],
+  providers: [LoggerService],
 })
 export class AppModule {}
