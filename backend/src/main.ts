@@ -20,10 +20,13 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Global API prefix
+  app.setGlobalPrefix('api');
+
   // API Versioning
   app.enableVersioning({
     type: VersioningType.URI,
-    prefix: 'api/v',
+    prefix: 'v',
   });
 
   // Global pipes

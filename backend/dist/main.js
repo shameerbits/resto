@@ -16,9 +16,10 @@ async function bootstrap() {
         origin: configService.get('APP_URL', 'http://localhost:3000'),
         credentials: true,
     });
+    app.setGlobalPrefix('api');
     app.enableVersioning({
         type: common_1.VersioningType.URI,
-        prefix: 'api/v',
+        prefix: 'v',
     });
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
