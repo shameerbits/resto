@@ -1,236 +1,140 @@
-# resto
+# Smart Restaurant ERP (Resto)
 
-## Backend Setup (Step 1)
+Production-focused Smart Restaurant ERP backend built with NestJS + MySQL.
 
-Backend stack:
-- Node.js + Express
-- MySQL
+## Current Status
 
-### 1. Install dependencies
+- Backend framework migrated to NestJS.
+- Core module structure is in place: auth, menu, order, kitchen, billing, inventory, recipe, table, health.
+- Global API routing is configured with:
+	- Base prefix: `/api`
+	- Versioned routes: `/api/v{n}/...`
+	- Version-neutral health route: `/api/health`
+- Health endpoint is verified and returning HTTP 200.
+
+## Tech Stack
+
+- NestJS 10
+- TypeORM + MySQL
+- Redis (cache/session foundation)
+- Winston logging
+- Class Validator / Class Transformer
+
+## Project Structure
+
+```text
+backend/
+	src/
+		main.ts
+		app.module.ts
+		common/
+		config/
+		database/
+		modules/
+	scripts/
+		init.sql
+		migrations/
+```
+
+## Prerequisites
+
+- Node.js 20+
+- npm 10+
+- MySQL 8+
+- Redis (optional for local development, depending on enabled features)
+
+## Local Setup
+
+1. Install dependencies
 
 ```bash
 cd backend
 npm install
 ```
 
-### 2. Configure environment
+2. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Update `.env` with your MySQL credentials.
+Update database values in `.env`:
 
-### 3. Create database
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+
+3. Initialize database schema (if needed)
 
 ```bash
 mysql -u root -p < scripts/init.sql
 ```
 
-### 4. Run backend
+4. Build
 
 ```bash
-npm run dev
+npm run build
 ```
 
-Server starts on `http://localhost:4000` by default.
-
-### Frontend (menu display + order placement)
-
-After running the backend, open:
+5. Run
 
 ```bash
-http://localhost:4000
+npm run start
 ```
 
-From the page, you can:
+Server default URL:
 
-- view available menu items (`isAvailable = true`)
-- select quantity per item
-- add optional notes
-- place an order using `POST /api/orders`
+- `http://localhost:3000`
 
-### 5. Quick health checks
+## Key Scripts
+
+From `backend/`:
+
+- `npm run dev` - start in watch mode
+- `npm run build` - compile TypeScript
+- `npm run start` - build then run compiled app
+- `npm run start:prod` - build then run compiled app
+- `npm run test` - run unit tests
+
+## API Routing Rules
+
+- Version-neutral route example:
+	- `GET /api/health`
+- Versioned route pattern:
+	- `GET /api/v1/...`
+
+## Quick Verification
+
+1. Health check
 
 ```bash
-curl http://localhost:4000/api/health
-curl http://localhost:4000/api/health/db
+curl http://localhost:3000/api/health
 ```
 
-## Menu Items (CRUD)
-
-### API Endpoints
-
-- `POST /api/menu`
-- `GET /api/menu`
-- `GET /api/menu/:id`
-- `GET /api/menu/:id/cost`
-- `PUT /api/menu/:id`
-- `DELETE /api/menu/:id`
-
-### Sample payload for create/update
+Expected response format:
 
 ```json
 {
-	"name": "Chicken Biryani",
-	"description": "Aromatic rice with chicken",
-	"price": 12.5,
-	"isAvailable": true
+	"success": true,
+	"statusCode": 200,
+	"message": "Service is healthy",
+	"data": {
+		"status": "ok",
+		"timestamp": "2026-04-17T12:04:16.975Z"
+	},
+	"timestamp": "2026-04-17T12:04:16.975Z"
 }
 ```
 
-### Quick curl tests
+## Notes
 
-```bash
-curl -X POST http://localhost:4000/api/menu \
-	-H "Content-Type: application/json" \
-	-d '{"name":"Chicken Biryani","description":"Aromatic rice with chicken","price":12.5,"isAvailable":true}'
+- `npm run start` is configured to build before execution so `dist/main.js` exists.
+- If startup fails with database connection errors, verify MySQL is running and credentials in `.env` are correct.
 
-curl http://localhost:4000/api/menu
-curl http://localhost:4000/api/menu/1
+## Roadmap
 
-curl -X PUT http://localhost:4000/api/menu/1 \
-	-H "Content-Type: application/json" \
-	-d '{"name":"Chicken Biryani (Large)","description":"Large serving","price":14.0,"isAvailable":true}'
+Planned implementation phases are documented in:
 
-curl -X DELETE http://localhost:4000/api/menu/1
-curl http://localhost:4000/api/menu/1/cost
-```
-
-### Cost calculation setup (ingredients)
-
-Cost per menu item is calculated from recipe rows:
-
-- `lineCost = quantity_required * unit_cost`
-- `totalIngredientCost = sum of all ingredient lineCost`
-
-For existing databases, run migration once:
-
-```bash
-mysql -u root -p resto_mvp < scripts/migrations/20260417_add_ingredient_unit_cost.sql
-```
-
-Then seed ingredient cost values:
-
-```sql
-UPDATE ingredients SET unit_cost = 2.400 WHERE name = 'Rice';
-UPDATE ingredients SET unit_cost = 5.200 WHERE name = 'Chicken';
-```
-
-## Orders API (Create + Fetch)
-
-### API Endpoints
-
-- `POST /api/orders`
-- `GET /api/orders/:id`
-
-### Sample payload for create order
-
-```json
-{
-	"notes": "Table 4 - no onions",
-	"items": [
-		{ "menuItemId": 1, "quantity": 2 },
-		{ "menuItemId": 2, "quantity": 1 }
-	]
-}
-```
-
-### How total is calculated
-
-- Unit price comes from `menu_items.price` at order creation time.
-- Line total = `unit_price * quantity`.
-- Order total = sum of all line totals.
-
-### Quick curl tests
-
-```bash
-curl -X POST http://localhost:4000/api/orders \
-	-H "Content-Type: application/json" \
-	-d '{"notes":"Table 4 - no onions","items":[{"menuItemId":1,"quantity":2},{"menuItemId":2,"quantity":1}]}'
-
-curl http://localhost:4000/api/orders/1
-```
-
-## Billing API (Tax + Final Total)
-
-### API Endpoint
-
-- `GET /api/orders/:id/bill`
-
-### Query Params
-
-- `taxPercent` optional, number between `0` and `100`
-- Default tax is `0` when omitted
-
-### How billing is calculated
-
-- `subtotal` comes from the saved order total
-- `taxAmount = subtotal * (taxPercent / 100)`
-- `finalTotal = subtotal + taxAmount`
-
-### Quick curl tests
-
-```bash
-curl http://localhost:4000/api/orders/1/bill
-curl "http://localhost:4000/api/orders/1/bill?taxPercent=5"
-```
-
-## Inventory Deduction (Recipe Based)
-
-When `POST /api/orders` is called, inventory is deducted automatically based on recipe rows:
-
-- `menu_item_recipes.quantity_required` defines ingredient usage for one menu item unit.
-- Required stock is multiplied by ordered quantity.
-- Order save + order_items save + inventory deduction run in one transaction.
-- If stock is insufficient, order creation fails and nothing is saved.
-
-### Seed ingredients and recipe example
-
-```sql
-INSERT INTO ingredients (name, unit, stock_quantity)
-VALUES
-	('Rice', 'kg', 20.000),
-	('Chicken', 'kg', 10.000)
-ON DUPLICATE KEY UPDATE
-	unit = VALUES(unit),
-	stock_quantity = VALUES(stock_quantity);
-
-INSERT INTO menu_item_recipes (menu_item_id, ingredient_id, quantity_required)
-VALUES
-	(1, 1, 0.250),
-	(1, 2, 0.200)
-ON DUPLICATE KEY UPDATE
-	quantity_required = VALUES(quantity_required);
-```
-
-### Verify deduction
-
-1. Check stock before order:
-```sql
-SELECT id, name, stock_quantity FROM ingredients ORDER BY id;
-```
-2. Create order with `menuItemId: 1`.
-3. Check stock again using the same select query.
-
-Expected: stock decreases by recipe quantity multiplied by ordered quantity.
-
-## Inventory Dashboard and Low Stock Alerts
-
-### API Endpoints
-
-- `GET /api/inventory/dashboard`
-- `GET /api/inventory/alerts/low-stock`
-
-### Query Params
-
-- `threshold` optional for low stock endpoint
-- default threshold is `5`
-
-### Quick curl tests
-
-```bash
-curl http://localhost:4000/api/inventory/dashboard
-curl http://localhost:4000/api/inventory/alerts/low-stock
-curl "http://localhost:4000/api/inventory/alerts/low-stock?threshold=2.5"
-```
+- `.github/prompts/plan-smartRestaurantErp.prompt.md`
