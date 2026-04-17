@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const healthRoutes = require('./routes/healthRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const menuRoutes = require('./routes/menuRoutes');
@@ -8,6 +9,7 @@ const { errorResponse } = require('./utils/apiResponse');
 const app = express();
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/api', healthRoutes);
 app.use('/api', inventoryRoutes);

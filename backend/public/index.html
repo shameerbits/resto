@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resto - Order Desk</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel hero">
+        <p class="eyebrow">Smart Restaurant ERP</p>
+        <h1>Menu & Order Desk</h1>
+        <p class="subtitle">Browse available dishes, choose quantity, and place an order in seconds.</p>
+        <button id="refreshButton" class="ghost-btn" type="button">Refresh Menu</button>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <h2>Available Menu</h2>
+          <p id="menuStatus" class="status-text">Loading menu...</p>
+        </div>
+        <div id="menuList" class="menu-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Place Order</h2>
+        <form id="orderForm" class="order-form">
+          <label for="orderNotes">Notes</label>
+          <textarea
+            id="orderNotes"
+            name="notes"
+            rows="3"
+            placeholder="Example: Table 3, less spicy"
+          ></textarea>
+
+          <button id="placeOrderButton" type="submit" class="primary-btn">Place Order</button>
+        </form>
+
+        <div id="feedback" class="feedback" aria-live="polite"></div>
+
+        <article id="orderResult" class="order-result hidden">
+          <h3>Order Created</h3>
+          <p><strong>Order ID:</strong> <span id="resultOrderId">-</span></p>
+          <p><strong>Status:</strong> <span id="resultOrderStatus">-</span></p>
+          <p><strong>Total:</strong> $<span id="resultOrderTotal">0.00</span></p>
+          <ul id="resultItems"></ul>
+        </article>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

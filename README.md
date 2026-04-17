@@ -35,6 +35,21 @@ npm run dev
 
 Server starts on `http://localhost:4000` by default.
 
+### Frontend (menu display + order placement)
+
+After running the backend, open:
+
+```bash
+http://localhost:4000
+```
+
+From the page, you can:
+
+- view available menu items (`isAvailable = true`)
+- select quantity per item
+- add optional notes
+- place an order using `POST /api/orders`
+
 ### 5. Quick health checks
 
 ```bash
