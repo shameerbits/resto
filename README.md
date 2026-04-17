@@ -177,3 +177,23 @@ SELECT id, name, stock_quantity FROM ingredients ORDER BY id;
 3. Check stock again using the same select query.
 
 Expected: stock decreases by recipe quantity multiplied by ordered quantity.
+
+## Inventory Dashboard and Low Stock Alerts
+
+### API Endpoints
+
+- `GET /api/inventory/dashboard`
+- `GET /api/inventory/alerts/low-stock`
+
+### Query Params
+
+- `threshold` optional for low stock endpoint
+- default threshold is `5`
+
+### Quick curl tests
+
+```bash
+curl http://localhost:4000/api/inventory/dashboard
+curl http://localhost:4000/api/inventory/alerts/low-stock
+curl "http://localhost:4000/api/inventory/alerts/low-stock?threshold=2.5"
+```
