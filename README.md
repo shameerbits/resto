@@ -114,3 +114,27 @@ curl -X POST http://localhost:4000/api/orders \
 
 curl http://localhost:4000/api/orders/1
 ```
+
+## Billing API (Tax + Final Total)
+
+### API Endpoint
+
+- `GET /api/orders/:id/bill`
+
+### Query Params
+
+- `taxPercent` optional, number between `0` and `100`
+- Default tax is `0` when omitted
+
+### How billing is calculated
+
+- `subtotal` comes from the saved order total
+- `taxAmount = subtotal * (taxPercent / 100)`
+- `finalTotal = subtotal + taxAmount`
+
+### Quick curl tests
+
+```bash
+curl http://localhost:4000/api/orders/1/bill
+curl "http://localhost:4000/api/orders/1/bill?taxPercent=5"
+```

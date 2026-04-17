@@ -135,7 +135,54 @@ async function createOrder(payload) {
   };
 }
 
+function parseTaxPercent(rawTaxPercent) {
+  if (rawTaxPercent === undefined || rawTaxPercent === null || rawTaxPercent === '') {
+    return { ok: true, data: 0 };
+  }
+
+  const taxPercent = Number(rawTaxPercent);
+  if (!Number.isFinite(taxPercent) || taxPercent < 0 || taxPercent > 100) {
+    return { ok: false, message: 'taxPercent must be a number between 0 and 100' };
+  }
+
+  return { ok: true, data: Number(taxPercent.toFixed(2)) };
+}
+
+async function getOrderBill(id, rawTaxPercent) {
+  const taxPercentResult = parseTaxPercent(rawTaxPercent);
+  if (!taxPercentResult.ok) {
+    return { ok: false, statusCode: 400, message: taxPercentResult.message };
+  }
+
+  const orderResult = await getOrderById(id);
+  if (!orderResult.ok) {
+    return orderResult;
+  }
+
+  const subtotal = Number(orderResult.data.totalAmount);
+  const taxPercent = taxPercentResult.data;
+  const taxAmount = Number(((subtotal * taxPercent) / 100).toFixed(2));
+  const finalTotal = Number((subtotal + taxAmount).toFixed(2));
+
+  return {
+    ok: true,
+    statusCode: 200,
+    data: {
+      orderId: orderResult.data.id,
+      status: orderResult.data.status,
+      notes: orderResult.data.notes,
+      createdAt: orderResult.data.createdAt,
+      items: orderResult.data.items,
+      subtotal,
+      taxPercent,
+      taxAmount,
+      finalTotal,
+    },
+  };
+}
+
 module.exports = {
   createOrder,
   getOrderById,
+  getOrderBill,
 };
