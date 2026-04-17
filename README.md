@@ -79,3 +79,38 @@ curl -X PUT http://localhost:4000/api/menu/1 \
 
 curl -X DELETE http://localhost:4000/api/menu/1
 ```
+
+## Orders API (Create + Fetch)
+
+### API Endpoints
+
+- `POST /api/orders`
+- `GET /api/orders/:id`
+
+### Sample payload for create order
+
+```json
+{
+	"notes": "Table 4 - no onions",
+	"items": [
+		{ "menuItemId": 1, "quantity": 2 },
+		{ "menuItemId": 2, "quantity": 1 }
+	]
+}
+```
+
+### How total is calculated
+
+- Unit price comes from `menu_items.price` at order creation time.
+- Line total = `unit_price * quantity`.
+- Order total = sum of all line totals.
+
+### Quick curl tests
+
+```bash
+curl -X POST http://localhost:4000/api/orders \
+	-H "Content-Type: application/json" \
+	-d '{"notes":"Table 4 - no onions","items":[{"menuItemId":1,"quantity":2},{"menuItemId":2,"quantity":1}]}'
+
+curl http://localhost:4000/api/orders/1
+```

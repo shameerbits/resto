@@ -23,6 +23,24 @@ async function findMenuItemById(id) {
   return rows[0] || null;
 }
 
+async function findMenuItemsByIds(ids) {
+  if (!ids.length) {
+    return [];
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const [rows] = await pool.query(
+    `
+      SELECT id, name, price, is_available AS isAvailable
+      FROM menu_items
+      WHERE id IN (${placeholders})
+    `,
+    ids
+  );
+
+  return rows;
+}
+
 async function listMenuItems() {
   const [rows] = await pool.query(`
     SELECT id, name, description, price, is_available AS isAvailable, created_at AS createdAt, updated_at AS updatedAt
@@ -56,6 +74,7 @@ async function deleteMenuItem(id) {
 module.exports = {
   createMenuItem,
   findMenuItemById,
+  findMenuItemsByIds,
   listMenuItems,
   updateMenuItem,
   deleteMenuItem,

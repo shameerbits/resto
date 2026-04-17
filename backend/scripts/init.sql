@@ -11,3 +11,28 @@ CREATE TABLE IF NOT EXISTS menu_items (
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	INDEX idx_menu_items_is_available (is_available)
 );
+
+CREATE TABLE IF NOT EXISTS orders (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+	total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+	notes VARCHAR(255) NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_orders_status (status)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	order_id INT NOT NULL,
+	menu_item_id INT NOT NULL,
+	quantity INT NOT NULL,
+	unit_price DECIMAL(10,2) NOT NULL,
+	line_total DECIMAL(10,2) NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT fk_order_items_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+	CONSTRAINT fk_order_items_menu_item_id FOREIGN KEY (menu_item_id) REFERENCES menu_items(id),
+	INDEX idx_order_items_order_id (order_id),
+	INDEX idx_order_items_menu_item_id (menu_item_id)
+);
