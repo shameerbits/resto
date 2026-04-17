@@ -29,7 +29,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.3",
     "@nestjs/schedule": "^4.0.1",
-    "@nestjs/typeorm": "^9.0.1",
+    "@nestjs/typeorm": "^10.0.0",
     "@nestjs/websockets": "^10.3.3",
     "cache-manager": "^5.4.0",
     "class-transformer": "^0.5.1",
