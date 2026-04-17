@@ -98,16 +98,40 @@ function collectOrderItems() {
   return items;
 }
 
-function renderOrderResult(order) {
+async function getMenuItemName(menuItemId) {
+  const existingItem = currentMenu.find((menuItem) => menuItem.id === menuItemId);
+  if (existingItem) {
+    return existingItem.name;
+  }
+
+  try {
+    const response = await fetch(`/api/menu/${menuItemId}`);
+    const payload = await response.json();
+    if (response.ok && payload.success && payload.data?.name) {
+      return payload.data.name;
+    }
+  } catch (error) {
+    return `Menu #${menuItemId}`;
+  }
+
+  return `Menu #${menuItemId}`;
+}
+
+async function renderOrderResult(order) {
   orderResultEl.classList.remove('hidden');
   resultOrderIdEl.textContent = String(order.id);
   resultOrderStatusEl.textContent = String(order.status || 'created');
   resultOrderTotalEl.textContent = formatCurrency(order.totalAmount);
 
   resultItemsEl.innerHTML = '';
-  order.items.forEach((item) => {
+
+  const names = await Promise.all(
+    order.items.map((item) => getMenuItemName(Number(item.menuItemId)))
+  );
+
+  order.items.forEach((item, index) => {
     const li = document.createElement('li');
-    li.textContent = `Menu #${item.menuItemId} x ${item.quantity} = $${formatCurrency(item.lineTotal)}`;
+    li.textContent = `${names[index]} x ${item.quantity} = $${formatCurrency(item.lineTotal)}`;
     resultItemsEl.appendChild(li);
   });
 }
@@ -142,7 +166,7 @@ async function submitOrder(event) {
     }
 
     setFeedback('Order placed successfully.', 'success');
-    renderOrderResult(result.data);
+    await renderOrderResult(result.data);
 
     menuListEl.querySelectorAll('input[data-menu-id]').forEach((input) => {
       input.value = '0';
