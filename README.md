@@ -49,6 +49,7 @@ curl http://localhost:4000/api/health/db
 - `POST /api/menu`
 - `GET /api/menu`
 - `GET /api/menu/:id`
+- `GET /api/menu/:id/cost`
 - `PUT /api/menu/:id`
 - `DELETE /api/menu/:id`
 
@@ -78,6 +79,27 @@ curl -X PUT http://localhost:4000/api/menu/1 \
 	-d '{"name":"Chicken Biryani (Large)","description":"Large serving","price":14.0,"isAvailable":true}'
 
 curl -X DELETE http://localhost:4000/api/menu/1
+curl http://localhost:4000/api/menu/1/cost
+```
+
+### Cost calculation setup (ingredients)
+
+Cost per menu item is calculated from recipe rows:
+
+- `lineCost = quantity_required * unit_cost`
+- `totalIngredientCost = sum of all ingredient lineCost`
+
+For existing databases, run migration once:
+
+```bash
+mysql -u root -p resto_mvp < scripts/migrations/20260417_add_ingredient_unit_cost.sql
+```
+
+Then seed ingredient cost values:
+
+```sql
+UPDATE ingredients SET unit_cost = 2.400 WHERE name = 'Rice';
+UPDATE ingredients SET unit_cost = 5.200 WHERE name = 'Chicken';
 ```
 
 ## Orders API (Create + Fetch)

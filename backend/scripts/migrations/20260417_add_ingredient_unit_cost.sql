@@ -1,0 +1,2 @@
+ALTER TABLE ingredients
+ADD COLUMN unit_cost DECIMAL(12,3) NOT NULL DEFAULT 0.000 AFTER unit;

@@ -78,10 +78,59 @@ async function deleteMenuItem(id) {
   return { ok: true, data: { deleted: true }, statusCode: 200 };
 }
 
+async function getMenuItemCost(id) {
+  const existing = await menuModel.findMenuItemById(id);
+  if (!existing) {
+    return { ok: false, statusCode: 404, message: 'menu item not found' };
+  }
+
+  const ingredients = await menuModel.getMenuItemCostBreakdown(id);
+  if (!ingredients.length) {
+    return {
+      ok: true,
+      statusCode: 200,
+      data: {
+        menuItemId: existing.id,
+        menuItemName: existing.name,
+        recipeConfigured: false,
+        totalIngredientCost: 0,
+        ingredients: [],
+      },
+    };
+  }
+
+  const normalizedIngredients = ingredients.map((item) => ({
+    ingredientId: item.ingredientId,
+    ingredientName: item.ingredientName,
+    unit: item.unit,
+    unitCost: Number(item.unitCost),
+    quantityRequired: Number(item.quantityRequired),
+    lineCost: Number(item.lineCost),
+  }));
+
+  const totalIngredientCost = Number(
+    normalizedIngredients.reduce((sum, item) => sum + item.lineCost, 0).toFixed(3)
+  );
+
+  return {
+    ok: true,
+    statusCode: 200,
+    data: {
+      menuItemId: existing.id,
+      menuItemName: existing.name,
+      sellingPrice: Number(existing.price),
+      recipeConfigured: true,
+      totalIngredientCost,
+      ingredients: normalizedIngredients,
+    },
+  };
+}
+
 module.exports = {
   createMenuItem,
   listMenuItems,
   getMenuItemById,
   updateMenuItem,
   deleteMenuItem,
+  getMenuItemCost,
 };

@@ -6,6 +6,7 @@ const router = express.Router();
 router.post('/menu', menuController.createMenuItem);
 router.get('/menu', menuController.listMenuItems);
 router.get('/menu/:id', menuController.getMenuItemById);
+router.get('/menu/:id/cost', menuController.getMenuItemCost);
 router.put('/menu/:id', menuController.updateMenuItem);
 router.delete('/menu/:id', menuController.deleteMenuItem);
 

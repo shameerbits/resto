@@ -77,10 +77,29 @@ async function deleteMenuItem(req, res) {
   }
 }
 
+async function getMenuItemCost(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return errorResponse(res, 'id must be a positive integer', 400);
+    }
+
+    const result = await menuService.getMenuItemCost(id);
+    if (!result.ok) {
+      return errorResponse(res, result.message, result.statusCode);
+    }
+
+    return successResponse(res, result.data, result.statusCode);
+  } catch (error) {
+    return errorResponse(res, 'Failed to calculate menu item cost', 500);
+  }
+}
+
 module.exports = {
   createMenuItem,
   listMenuItems,
   getMenuItemById,
   updateMenuItem,
   deleteMenuItem,
+  getMenuItemCost,
 };

@@ -71,6 +71,27 @@ async function deleteMenuItem(id) {
   return result.affectedRows;
 }
 
+async function getMenuItemCostBreakdown(id) {
+  const [rows] = await pool.query(
+    `
+      SELECT
+        mir.ingredient_id AS ingredientId,
+        i.name AS ingredientName,
+        i.unit,
+        i.unit_cost AS unitCost,
+        mir.quantity_required AS quantityRequired,
+        (mir.quantity_required * i.unit_cost) AS lineCost
+      FROM menu_item_recipes mir
+      INNER JOIN ingredients i ON i.id = mir.ingredient_id
+      WHERE mir.menu_item_id = ?
+      ORDER BY i.name ASC
+    `,
+    [id]
+  );
+
+  return rows;
+}
+
 module.exports = {
   createMenuItem,
   findMenuItemById,
@@ -78,4 +99,5 @@ module.exports = {
   listMenuItems,
   updateMenuItem,
   deleteMenuItem,
+  getMenuItemCostBreakdown,
 };
